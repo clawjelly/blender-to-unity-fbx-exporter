@@ -155,8 +155,14 @@ def export_unity_fbx(context, filepath, active_collection, selected_objects, def
 
 	print("Preparing 3D model for Unity...")
 
+	wm=bpy.context.window_manager
+	wm.progress_begin(0, 100)
+	wm.progress_update(1)
+
 	# Root objects: Empty, Mesh or Armature without parent
 	root_objects = [item for item in bpy.data.objects if (item.type == "EMPTY" or item.type == "MESH" or item.type == "ARMATURE") and not item.parent]
+
+	wm.progress_update(10)
 
 	# Preserve current scene
 	# undo_push examples, including exporters' execute:
@@ -173,6 +179,7 @@ def export_unity_fbx(context, filepath, active_collection, selected_objects, def
 
 	selection = bpy.context.selected_objects
 
+	wm.progress_update(20)
 	# Object mode
 	bpy.ops.object.mode_set(mode="OBJECT")
 
@@ -186,15 +193,21 @@ def export_unity_fbx(context, filepath, active_collection, selected_objects, def
 	# Apply modifiers to objects (except those affected by an armature)
 	apply_object_modifiers()
 
+	wm.progress_update(30)
+
 	try:
 		# Fix rotations
 		for ob in root_objects:
 			print(ob.name)
 			fix_object(ob)
 
+		wm.progress_update(40)
+		
 		# Restore multi-user meshes
 		for item in shared_data:
 			bpy.data.objects[item].data = shared_data[item]
+
+		wm.progress_update(50)
 
 		# Recompute the transforms out of the changed matrices
 		bpy.context.view_layer.update()
@@ -205,20 +218,26 @@ def export_unity_fbx(context, filepath, active_collection, selected_objects, def
 		for ob in disabled_objects:
 			ob.hide_viewport = True
 
+		wm.progress_update(60)
+		
 		# Restore hidden and disabled collections
 		for col in hidden_collections:
 			col.hide_viewport = True
 		for col in disabled_collections:
 			col.collection.hide_viewport = True
 
+		wm.progress_update(70)
+
 		# Restore selection
 		bpy.ops.object.select_all(action='DESELECT')
 		for ob in selection:
 			ob.select_set(True)
 
+		wm.progress_update(80)
 		# Export FBX file
 
 		params = dict(filepath=filepath, apply_scale_options='FBX_SCALE_UNITS', object_types={'EMPTY', 'MESH', 'ARMATURE'}, use_active_collection=active_collection, use_selection=selected_objects, use_armature_deform_only=deform_bones, add_leaf_bones=leaf_bones)
+		wm.progress_update(90)
 
 		print("Invoking default FBX Exporter:", params)
 		bpy.ops.export_scene.fbx(**params)
@@ -231,6 +250,8 @@ def export_unity_fbx(context, filepath, active_collection, selected_objects, def
 		print("File not saved.")
 		# Always finish with 'FINISHED' so Undo is handled properly
 		return {'FINISHED'}
+	finally:
+		wm.progress_end()
 
 	# Restore scene and finish
 
@@ -278,7 +299,7 @@ class ExportUnityFbx(Operator, ExportHelper):
 	selected_objects: BoolProperty(
 		name="Selected Objects Only",
 		description="Export selected objects only. May be combined with Active Collection Only.",
-		default=False,
+		default=True,
 	)
 
 	deform_bones: BoolProperty(
