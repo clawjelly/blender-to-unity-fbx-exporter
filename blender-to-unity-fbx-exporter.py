@@ -334,7 +334,14 @@ class ExportUnityFbx(Operator, ExportHelper):
 		row.prop(self, "leaf_bones")
 
 	def execute(self, context):
+		context.active_object.unity_fbx_path=self.filepath
 		return export_unity_fbx(context, self.filepath, self.active_collection, self.selected_objects, self.deform_bones, self.leaf_bones)
+
+	def invoke(self, context, event):
+		if context.active_object.unity_fbx_path!="":
+			self.filepath=context.active_object.unity_fbx_path
+		wm = context.window_manager.fileselect_add(self)
+		return {'RUNNING_MODAL'}
 
 
 # Only needed if you want to add into a dynamic menu
@@ -343,6 +350,12 @@ def menu_func_export(self, context):
 
 
 def register():
+	bpy.types.Object.unity_fbx_path=bpy.props.StringProperty(
+		name="Unity FBX Path",
+		description="The last export path for this object",
+		maxlen=1024,
+		subtype="FILE_PATH"
+		)
 	bpy.utils.register_class(ExportUnityFbx)
 	bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
 
