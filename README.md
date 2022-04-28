@@ -70,6 +70,10 @@ Requires Blender to be installed in the system, so:
 - Nested collections.
 - Objects with their parent in a disabled/excluded collection.
 
+## Changes
+
+- **1.3.2** Clawjelly: Added a progress counter, set "selected only" as default and made objects remember their export path.
+
 ## About the author
 
 Angel "Edy" Garcia<br>
